@@ -49,14 +49,14 @@ NS_ASSUME_NONNULL_BEGIN
     return [self initWithAVPlayer:player playModel:SJPlayModel.new];
 }
 - (nullable instancetype)initWithAVPlayer:(AVPlayer *)player playModel:(__kindof SJPlayModel *)playModel {
-    return [self initWithAVPlayer:player startPosition:0 playModel:playModel];
+    return [self initWithAVPlayer:player startPosition:0 playModel:SJPlayModel.new];
 }
 - (nullable instancetype)initWithAVPlayer:(AVPlayer *)player startPosition:(NSTimeInterval)startPosition playModel:(__kindof SJPlayModel *)playModel {
     if ( player == nil ) return nil;
     self = [super init];
     if ( self ) {
         self.avPlayer = player;
-        self.playModel = playModel?:[SJPlayModel new];
+        self.playModel = playModel;
         self.startPosition = startPosition;
     }
     return self;

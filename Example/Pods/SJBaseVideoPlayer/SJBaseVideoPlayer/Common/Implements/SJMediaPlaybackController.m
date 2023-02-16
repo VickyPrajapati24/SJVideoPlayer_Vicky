@@ -893,4 +893,9 @@ NSNotificationName const SJMediaPlayerMutedDidChangeNotification = @"SJMediaPlay
 
 NSNotificationName const SJMediaPlayerViewReadyForDisplayNotification = @"SJMediaPlayerViewReadyForDisplayNotification";
 NSNotificationName const SJMediaPlayerPlaybackTypeDidChangeNotification = @"SJMediaPlayerPlaybackTypeDidChangeNotification";
+
+NSNotificationName const SJMediaPlayerPausedNotification_VP = @"SJMediaPlayerPausedNotification_VP";
+NSNotificationName const SJMediaPlayerWillSeekNotification_VP = @"SJMediaPlayerWillSeekNotification_VP";
+NSNotificationName const SJMediaPlayerPlayingNotification_VP = @"SJMediaPlayerPlayingNotification_VP";
+
 NS_ASSUME_NONNULL_END

@@ -104,7 +104,7 @@ NS_ASSUME_NONNULL_BEGIN
     [self seekToTime:kCMTimeZero completionHandler:^(BOOL finished) {
         __strong typeof(_self) self = _self;
         if ( !self ) return;
-        [self _postNotification:SJMediaPlayerDidReplayNotification];
+        [self _postNotification:SJMediaPlayerDidReplayNotification userInfo:nil];
         [self play];
     }];
 }
@@ -133,11 +133,11 @@ NS_ASSUME_NONNULL_BEGIN
 }
 
 - (void)report {
-    [self _postNotification:SJMediaPlayerAssetStatusDidChangeNotification];
-    [self _postNotification:SJMediaPlayerTimeControlStatusDidChangeNotification];
-    [self _postNotification:SJMediaPlayerDurationDidChangeNotification];
-    [self _postNotification:SJMediaPlayerPlayableDurationDidChangeNotification];
-    [self _postNotification:SJMediaPlayerPlaybackTypeDidChangeNotification];
+    [self _postNotification:SJMediaPlayerAssetStatusDidChangeNotification userInfo:nil];
+    [self _postNotification:SJMediaPlayerTimeControlStatusDidChangeNotification userInfo:nil];
+    [self _postNotification:SJMediaPlayerDurationDidChangeNotification userInfo:nil];
+    [self _postNotification:SJMediaPlayerPlayableDurationDidChangeNotification userInfo:nil];
+    [self _postNotification:SJMediaPlayerPlaybackTypeDidChangeNotification userInfo:nil];
 }
 
 - (nullable NSError *)error {
@@ -161,7 +161,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)setAssetStatus:(SJAssetStatus)assetStatus {
     _assetStatus = assetStatus;
-    [self _postNotification:SJMediaPlayerAssetStatusDidChangeNotification];
+    [self _postNotification:SJMediaPlayerAssetStatusDidChangeNotification userInfo:nil];
     
 #ifdef DEBUG
     if ( _assetStatus == SJAssetStatusFailed ) {
@@ -179,11 +179,26 @@ NS_ASSUME_NONNULL_BEGIN
 }
 
 - (void)setTimeControlStatus:(SJPlaybackTimeControlStatus)timeControlStatus {
+    if (timeControlStatus != _timeControlStatus && timeControlStatus == SJPlaybackTimeControlStatusPlaying) {
+        
+        long seconds = (long) CMTimeGetSeconds(_avPlayer.currentItem.currentTime);
+        int hour = (int) (seconds / 3600);
+        int mins = (seconds % 3600) / 60;
+        int secs = seconds % 60;
+        printf("curTime: %02d:%02d:%02d \n", hour, mins, secs);
+        NSString *playTime = [[NSString alloc] initWithFormat:@"%02d:%02d:%02d", hour, mins, secs];
+        
+        NSMutableDictionary *playTimeDict = [NSMutableDictionary dictionary];
+
+        [playTimeDict setObject: playTime forKey: @"playStartTime"];
+        
+        [self _postNotification:SJMediaPlayerPlayingNotification_VP userInfo:playTimeDict];
+    }
     _timeControlStatus = timeControlStatus;
     
     [self _refreshOrStop];
     
-    [self _postNotification:SJMediaPlayerTimeControlStatusDidChangeNotification];
+    [self _postNotification:SJMediaPlayerTimeControlStatusDidChangeNotification userInfo:nil];
 }
 
 - (void)setIsPlaybackFinished:(BOOL)isPlaybackFinished {
@@ -191,19 +206,30 @@ NS_ASSUME_NONNULL_BEGIN
         if ( !isPlaybackFinished ) _finishedReason = nil;
         _isPlaybackFinished = isPlaybackFinished;
         if ( isPlaybackFinished ) {
-            [self _postNotification:SJMediaPlayerPlaybackDidFinishNotification];
+            long seconds = (long) CMTimeGetSeconds(_avPlayer.currentItem.currentTime);
+            int hour = (int) (seconds / 3600);
+            int mins = (seconds % 3600) / 60;
+            int secs = seconds % 60;
+            printf("curTime: %02d:%02d:%02d \n", hour, mins, secs);
+            NSString *playTime = [[NSString alloc] initWithFormat:@"%02d:%02d:%02d", hour, mins, secs];
+            
+            NSMutableDictionary *playEndTimeDict = [NSMutableDictionary dictionary];
+
+            [playEndTimeDict setObject: playTime forKey: @"playEndTime"];
+            
+            [self _postNotification:SJMediaPlayerPlaybackDidFinishNotification userInfo:playEndTimeDict];
         }
     }
 }
 
 - (void)setPlaybackType:(SJPlaybackType)playbackType {
     _playbackType = playbackType;
-    [self _postNotification:SJMediaPlayerPlaybackTypeDidChangeNotification];
+    [self _postNotification:SJMediaPlayerPlaybackTypeDidChangeNotification userInfo:nil];
 }
 
 - (void)setMuted:(BOOL)muted {
     _avPlayer.muted = muted;
-    [self _postNotification:SJMediaPlayerMutedDidChangeNotification];
+    [self _postNotification:SJMediaPlayerMutedDidChangeNotification userInfo:nil];
 }
 - (BOOL)isMuted {
     return _avPlayer.isMuted;
@@ -211,7 +237,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)setVolume:(float)volume {
     _avPlayer.volume = volume;
-    [self _postNotification:SJMediaPlayerVolumeDidChangeNotification];
+    [self _postNotification:SJMediaPlayerVolumeDidChangeNotification userInfo:nil];
 }
 - (float)volume {
     return _avPlayer.volume;
@@ -227,7 +253,7 @@ NS_ASSUME_NONNULL_BEGIN
         [self pause];
     }
     
-    [self _postNotification:SJMediaPlayerRateDidChangeNotification];
+    [self _postNotification:SJMediaPlayerRateDidChangeNotification userInfo:nil];
 }
 
 - (void)setInnerError:(nullable NSError *)innerError {
@@ -237,12 +263,12 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)setDuration:(NSTimeInterval)duration {
     _duration = duration;
-    [self _postNotification:SJMediaPlayerDurationDidChangeNotification];
+    [self _postNotification:SJMediaPlayerDurationDidChangeNotification userInfo:nil];
 }
 
 - (void)setPlayableDuration:(NSTimeInterval)playableDuration {
     _playableDuration = playableDuration;
-    [self _postNotification:SJMediaPlayerPlayableDurationDidChangeNotification];
+    [self _postNotification:SJMediaPlayerPlayableDurationDidChangeNotification userInfo:nil];
 }
 
 - (NSTimeInterval)currentTime {
@@ -272,14 +298,36 @@ NS_ASSUME_NONNULL_BEGIN
 
 #pragma mark -
 
-- (void)_postNotification:(NSNotificationName)name {
+- (void)_postNotification:(NSNotificationName)name userInfo:(nullable NSDictionary *)aUserInfo {
     dispatch_async(dispatch_get_main_queue(), ^{
-        [NSNotificationCenter.defaultCenter postNotificationName:name object:self];
+        [NSNotificationCenter.defaultCenter postNotificationName:name object:self userInfo:aUserInfo];
     });
 }
 
 - (void)_willSeeking:(CMTime)time {
     [_avPlayer.currentItem cancelPendingSeeks];
+    
+    long seconds = (long) CMTimeGetSeconds(_avPlayer.currentItem.currentTime);
+    int hour = (int) (seconds / 3600);
+    int mins = (seconds % 3600) / 60;
+    int secs = seconds % 60;
+    printf("curTime: %02d:%02d:%02d \n", hour, mins, secs);
+    NSString *seekFrom = [[NSString alloc] initWithFormat:@"%02d:%02d:%02d", hour, mins, secs];
+//    NSLog(@"seekFrom: %@", seekFrom);
+    
+    long seekSeconds = (long)CMTimeGetSeconds(time);
+    int seekHour = (int) (seekSeconds / 3600);
+    int seekMins = (seekSeconds % 3600) / 60;
+    int seekSecs = seekSeconds % 60;
+    NSString *seekTo = [[NSString alloc] initWithFormat:@"%02d:%02d:%02d", seekHour, seekMins, seekSecs];
+//    NSLog(@"seekTime: %@", seekTo);
+    
+    NSMutableDictionary *seekDict = [NSMutableDictionary dictionary];
+
+    [seekDict setObject: seekFrom forKey: @"seek_from"];
+    [seekDict setObject: seekTo forKey: @"seek_to"];
+    
+    [self _postNotification:SJMediaPlayerWillSeekNotification_VP userInfo:seekDict];
     
     self.isPlaybackFinished = NO;
     _seekingInfo.time = time;
@@ -497,7 +545,7 @@ static NSString *kTimeControlStatus = @"timeControlStatus";
 }
 
 - (void)_presentationSizeDidChange {
-    [self _postNotification:SJMediaPlayerPresentationSizeDidChangeNotification];
+    [self _postNotification:SJMediaPlayerPresentationSizeDidChangeNotification userInfo:nil];
 }
 
 - (void)_failedToPlayToEndTime:(NSNotification *)note {

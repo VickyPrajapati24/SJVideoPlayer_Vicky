@@ -1215,6 +1215,18 @@ typedef struct _SJPlayerControlInfo {
 }
 
 - (void)pauseForUser {
+    if (_controlInfo->playbackControl.isUserPaused == NO) {
+        long seconds = (long) _playbackController.currentTime;
+        int hour = (int) (seconds / 3600);
+        int mins = (seconds % 3600) / 60;
+        int secs = seconds % 60;
+        NSString *pauseTime = [[NSString alloc] initWithFormat:@"%02d:%02d:%02d", hour, mins, secs];
+        
+        NSMutableDictionary *pauseTimeDict = [NSMutableDictionary dictionary];
+        [pauseTimeDict setObject: pauseTime forKey: @"pause_time"];
+        
+        [self _postNotification:SJMediaPlayerPausedNotification_VP userInfo:pauseTimeDict];
+    }
     _controlInfo->playbackControl.isUserPaused = YES;
     [self pause];
 }

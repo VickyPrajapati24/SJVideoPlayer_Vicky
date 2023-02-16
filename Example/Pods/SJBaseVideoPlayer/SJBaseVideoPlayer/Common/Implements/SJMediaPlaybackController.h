@@ -58,6 +58,10 @@ extern NSNotificationName const SJMediaPlayerRateDidChangeNotification;
 extern NSNotificationName const SJMediaPlayerVolumeDidChangeNotification;
 extern NSNotificationName const SJMediaPlayerMutedDidChangeNotification;
 
+extern NSNotificationName const SJMediaPlayerPausedNotification_VP;
+extern NSNotificationName const SJMediaPlayerWillSeekNotification_VP;
+extern NSNotificationName const SJMediaPlayerPlayingNotification_VP;
+
 /// view
 extern NSNotificationName const SJMediaPlayerViewReadyForDisplayNotification;
 
